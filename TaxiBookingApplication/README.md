@@ -262,7 +262,3 @@ pip install django djangorestframework django-cors-headers
 | 📱 **Responsive Design** | Glassmorphic design system with smooth animations, micro-interactions, and mobile-friendly layout. |
 
 ---
-
-## 📜 License
-
-This project is developed for educational and demonstration purposes.
