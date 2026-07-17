@@ -1,4 +1,4 @@
-# CabFlow - Premium Taxi Booking Application
+<img width="683" height="408" alt="Screenshot 2026-07-17 154043" src="https://github.com/user-attachments/assets/48b0e3d1-0d0a-4a6a-8729-c4b72ab56fea" /># CabFlow - Premium Taxi Booking Application
 
 CabFlow is a full-stack, high-fidelity taxi booking and ride-hailing application. It connects customers with professional drivers, enables vehicle tracking, processes mock digital payments, and features comprehensive administrative dashboards.
 
@@ -7,23 +7,25 @@ CabFlow is a full-stack, high-fidelity taxi booking and ride-hailing application
 ## 📸 Application Screenshots
 
 ### Landing Page (Home)
-<img width="713" height="395" alt="image" src="https://github.com/user-attachments/assets/34090bc3-859e-44d0-a27b-62038b9b23c6" />
+<img width="928" height="451" alt="Screenshot 2026-07-17 154000" src="https://github.com/user-attachments/assets/fd59d44b-d484-4647-a920-0b4347bac237" />
+
 
 
 ### Login Page
-<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/b2304ff4-c718-48a3-b434-de178f2df2ae" />
+<img width="893" height="416" alt="Screenshot 2026-07-17 154349" src="https://github.com/user-attachments/assets/9d5ececc-dd17-42d4-bdbf-6695f37529c1" />
+
 
 
 ### Ride Booking Page
-<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/29c1baf4-6061-4358-a7e1-39de651e8195" />
+<img width="683" height="408" alt="Screenshot 2026-07-17 154043" src="https://github.com/user-attachments/assets/e63e5ec6-7eba-43b6-b185-6556f8486a29" />
 
 
-### Live GPS Tracking & Driver Details
-<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/94cbb8bd-7d8e-4988-8d97-6c5ed3aeead3" />
 
-<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/c2bf7873-152f-43e2-b5d1-1a39b6f75bbe" />
+### Live GPS Tracking & Driver Details!
+[Uploading Screenshot 2026-07-17 154043.png…]()
 
-<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/9135573f-fa25-44af-a84f-312d37c9601e" />
+<img width="713" height="395" alt="Screenshot 2026-07-17 154157" src="https://github.com/user-attachments/assets/f901887f-c174-45ea-a52a-890e633dafd5" />
+<img width="625" height="408" alt="Screenshot 2026-07-17 154116" src="https://github.com/user-attachments/assets/8c1a0985-89b0-46e5-b06a-2c457bac4279" />
 
 ---
 
