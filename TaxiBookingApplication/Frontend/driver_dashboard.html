@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard - CabFlow</title>
+    <meta name="description" content="Access your CabFlow Driver dashboard. View assigned rides, toggle availability status, manage active trips, and check total earnings.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <div class="dashboard-header">
+            <div>
+                <h1 style="font-size: 2.25rem;" id="drv-greeting">Hello, Ramesh Kumar</h1>
+                <p style="color: var(--text-muted);">Manage your active trips, update ride statuses, and track your daily earnings</p>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">Availability:</span>
+                <select id="drv-quick-availability" class="form-control" style="width: auto; border-color: var(--primary);" onchange="quickUpdateAvailability(this.value)">
+                    <option value="Available">Available</option>
+                    <option value="Busy">Busy</option>
+                    <option value="Offline">Offline</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total Assigned Trips</span>
+                <span class="stat-value" id="stat-drv-trips">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Completed Trips</span>
+                <span class="stat-value" id="stat-drv-completed" style="color: var(--success);">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Active / Pending</span>
+                <span class="stat-value" id="stat-drv-active" style="color: var(--info);">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Total Earnings</span>
+                <span class="stat-value" id="stat-drv-earnings">₹0.00</span>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Left: Active / Assigned Jobs -->
+            <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <h2 class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Assigned Ride Requests</span>
+                    <span class="badge badge-info" id="assigned-jobs-count">0 Jobs</span>
+                </h2>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; max-height: 450px;" id="assigned-jobs-container">
+                    <p style="color: var(--text-muted); text-align: center;">Loading jobs...</p>
+                </div>
+            </div>
+
+            <!-- Right: Driver Trip Logs -->
+            <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <h2 class="card-title">Completed Trips Log</h2>
+                
+                <div class="table-container">
+                    <table style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>Booking</th>
+                                <th>Passenger</th>
+                                <th>Route</th>
+                                <th>Fare Earned</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completed-jobs-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-muted);">No completed rides found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Security check
+        if (!enforceRole(['driver'])) {
+            throw new Error("Access Denied");
+        }
+
+        const driver = Session.getUser();
+
+        // Initialize greeting & dropdown
+        document.getElementById('drv-greeting').innerText = `Hello, Driver ${driver.driver_name}`;
+        document.getElementById('drv-quick-availability').value = driver.availability;
+
+        // Quick status update
+        async function quickUpdateAvailability(status) {
+            try {
+                const response = await apiFetch(`/drivers/update/${driver.driver_id}/`, {
+                    method: 'PUT',
+                    body: { availability: status }
+                });
+                Session.setUser(response, 'driver');
+                showToast(`Status updated to: ${status}`, 'success');
+                loadMetrics();
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // Load driver statistics and lists
+        async function loadMetrics() {
+            try {
+                const [bookings, payments] = await Promise.all([
+                    apiFetch('/bookings/'),
+                    apiFetch('/payments/')
+                ]);
+                
+                // Filter bookings by driver name
+                const myBookings = bookings.filter(b => b.driver_name === driver.driver_name);
+                
+                // Calculate metrics
+                const totalTrips = myBookings.length;
+                const completedTrips = myBookings.filter(b => b.ride_status === 'Completed').length;
+                
+                // Filter only paid completed bookings for earnings calculation or total completed fares
+                // Usually driver earns when trip is completed. Let's sum the fare of all completed rides
+                const completedFares = myBookings
+                    .filter(b => b.ride_status === 'Completed')
+                    .reduce((sum, b) => sum + b.fare, 0);
+
+                const activeTrips = myBookings.filter(b => b.ride_status === 'Requested' || b.ride_status === 'Accepted' || b.ride_status === 'In Progress').length;
+                
+                // Update stats UI
+                document.getElementById('stat-drv-trips').innerText = totalTrips;
+                document.getElementById('stat-drv-completed').innerText = completedTrips;
+                document.getElementById('stat-drv-active').innerText = activeTrips;
+                document.getElementById('stat-drv-earnings').innerText = `₹${completedFares.toFixed(2)}`;
+
+                // Active assigned jobs UI
+                const activeJobs = myBookings.filter(b => b.ride_status !== 'Completed' && b.ride_status !== 'Cancelled');
+                document.getElementById('assigned-jobs-count').innerText = `${activeJobs.length} Jobs`;
+                
+                const jobsContainer = document.getElementById('assigned-jobs-container');
+                if (activeJobs.length === 0) {
+                    jobsContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No active assigned ride requests found.</p>`;
+                } else {
+                    jobsContainer.innerHTML = '';
+                    
+                    activeJobs.forEach(b => {
+                        const payment = payments.find(p => p.booking_id === b.booking_id);
+                        const isPaid = payment && payment.payment_status === 'Success';
+
+                        let badgeClass = 'badge-pending';
+                        if (b.ride_status === 'Accepted') badgeClass = 'badge-success';
+                        if (b.ride_status === 'In Progress') badgeClass = 'badge-primary';
+
+                        let actionButtons = '';
+                        if (b.ride_status === 'Requested') {
+                            actionButtons = `
+                                <button onclick="updateJobStatus(${b.booking_id}, 'Accepted')" class="btn btn-primary btn-sm" style="flex: 1;">Accept Ride</button>
+                            `;
+                        } else if (b.ride_status === 'Accepted') {
+                            actionButtons = `
+                                <button onclick="updateJobStatus(${b.booking_id}, 'In Progress')" class="btn btn-primary btn-sm" style="flex: 1;">Start Trip</button>
+                            `;
+                        } else if (b.ride_status === 'In Progress') {
+                            actionButtons = `
+                                <button onclick="updateJobStatus(${b.booking_id}, 'Completed')" class="btn btn-success btn-sm" style="flex: 1;">Complete Trip</button>
+                            `;
+                        }
+
+                        const div = document.createElement('div');
+                        div.style.background = 'rgba(255,255,255,0.03)';
+                        div.style.border = '1px solid var(--border-color)';
+                        div.style.borderRadius = '12px';
+                        div.style.padding = '1.25rem';
+                        div.style.display = 'flex';
+                        div.style.flexDirection = 'column';
+                        div.style.gap = '0.75rem';
+
+                        div.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong>Job #${b.booking_id}</strong>
+                                <span class="badge ${badgeClass}">${b.ride_status}</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                <div><strong>Passenger:</strong> ${b.customer_name}</div>
+                                <div><strong>Pickup:</strong> ${b.pickup_location}</div>
+                                <div><strong>Drop:</strong> ${b.drop_location}</div>
+                                <div style="color: var(--primary); font-weight: 600; margin-top: 0.25rem;">Fare: ₹${b.fare.toFixed(2)} (${isPaid ? 'Paid' : 'Unpaid'})</div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                ${actionButtons}
+                                <button onclick="cancelJob(${b.booking_id})" class="btn btn-secondary btn-sm">Reject / Cancel</button>
+                            </div>
+                        `;
+                        jobsContainer.appendChild(div);
+                    });
+                }
+
+                // Completed trips body
+                const completedJobs = myBookings.filter(b => b.ride_status === 'Completed');
+                const completedBody = document.getElementById('completed-jobs-body');
+                if (completedJobs.length === 0) {
+                    completedBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No completed rides found.</td></tr>`;
+                } else {
+                    completedBody.innerHTML = '';
+                    completedJobs.forEach(b => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><strong>#${b.booking_id}</strong></td>
+                            <td>${b.customer_name}</td>
+                            <td>
+                                <div>${b.pickup_location}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">➜ ${b.drop_location}</div>
+                            </td>
+                            <td style="color: var(--success); font-weight: 600;">+ ₹${b.fare.toFixed(2)}</td>
+                            <td>${b.booking_date}</td>
+                        `;
+                        completedBody.appendChild(row);
+                    });
+                }
+
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // Change status of assigned job (e.g. Accept, Start, Complete)
+        async function updateJobStatus(bookingId, status) {
+            try {
+                // Update booking
+                const response = await apiFetch(`/bookings/update/${bookingId}/`, {
+                    method: 'PUT',
+                    body: { ride_status: status }
+                });
+                
+                showToast(`Ride status updated: ${status}`, 'success');
+
+                // If trip completed, driver availability becomes Available again
+                if (status === 'Completed') {
+                    const drvResponse = await apiFetch(`/drivers/update/${driver.driver_id}/`, {
+                        method: 'PUT',
+                        body: { availability: 'Available' }
+                    });
+                    
+                    // Update dropdown and session
+                    Session.setUser(drvResponse, 'driver');
+                    document.getElementById('drv-quick-availability').value = 'Available';
+                } else if (status === 'In Progress') {
+                    // Driver is busy on trip
+                    const drvResponse = await apiFetch(`/drivers/update/${driver.driver_id}/`, {
+                        method: 'PUT',
+                        body: { availability: 'Busy' }
+                    });
+                    Session.setUser(drvResponse, 'driver');
+                    document.getElementById('drv-quick-availability').value = 'Busy';
+                }
+                
+                loadMetrics();
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // Reject / Cancel Job
+        async function cancelJob(bookingId) {
+            if (!confirm('Are you sure you want to decline this ride?')) return;
+            try {
+                // Update booking status to cancelled
+                await apiFetch(`/bookings/update/${bookingId}/`, {
+                    method: 'PUT',
+                    body: { ride_status: 'Cancelled' }
+                });
+                
+                // Set driver availability to Available
+                const drvResponse = await apiFetch(`/drivers/update/${driver.driver_id}/`, {
+                    method: 'PUT',
+                    body: { availability: 'Available' }
+                });
+                
+                Session.setUser(drvResponse, 'driver');
+                document.getElementById('drv-quick-availability').value = 'Available';
+                
+                showToast('Trip declined and cancelled.', 'info');
+                loadMetrics();
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // Initial fetch
+        loadMetrics();
+    </script>
+</body>
+</html>

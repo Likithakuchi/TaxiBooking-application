@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CabFlow - Premium Taxi Booking & Ride Hailing Platform</title>
+    <meta name="description" content="Book taxi rides instantly, track professional drivers, and experience luxury city transport with CabFlow. Safe, affordable, and quick ride-hailing.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <!-- Hero Banner Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">Your Next <span>Comfortable Journey</span> is One Click Away</h1>
+                <p class="hero-subtitle">Experience city travel redefined. Professional drivers, premium vehicle classes, transparent estimates, and instant online payments.</p>
+                <div class="hero-buttons">
+                    <a href="booking.html" class="btn btn-primary" id="btn-hero-book">Book a Ride Now</a>
+                    <a href="register.html" class="btn btn-secondary" id="btn-hero-register">Sign Up to Ride</a>
+                </div>
+            </div>
+            
+            <div class="hero-image">
+                <div class="hero-img-container">
+                    <img src="images/hero_city.png" alt="Premium Taxi Cab Flow" class="hero-img" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+        </section>
+
+        <!-- Popular Destinations Section -->
+        <section class="destinations">
+            <div class="section-header">
+                <h2>Popular Destinations In Town</h2>
+                <p>Top locations frequented by CabFlow users. Safe and quick transit guaranteed.</p>
+            </div>
+            
+            <div class="grid-4">
+                <div class="dest-card">
+                    <div class="dest-img-placeholder">
+                        <img src="images/charminar.png" alt="Charminar monument in Hyderabad">
+                    </div>
+                    <div class="dest-info">
+                        <h3 class="dest-name">Charminar</h3>
+                        <p class="dest-desc">Historic Hyderabad landmark. Vibrant local markets, legendary architectural beauty, and traditional shopping lanes.</p>
+                    </div>
+                </div>
+                
+                <div class="dest-card">
+                    <div class="dest-img-placeholder">
+                        <img src="images/hussain_sagar.png" alt="Hussain Sagar Lake Hyderabad">
+                    </div>
+                    <div class="dest-info">
+                        <h3 class="dest-name">Hussain Sagar</h3>
+                        <p class="dest-desc">Scenic lake views. Large Buddha statue, boating, lakeside parks, and beautiful night illumination.</p>
+                    </div>
+                </div>
+                
+                <div class="dest-card">
+                    <div class="dest-img-placeholder">
+                        <img src="images/cyber_towers.png" alt="Cyber Towers building Madhapur">
+                    </div>
+                    <div class="dest-info">
+                        <h3 class="dest-name">Madhapur</h3>
+                        <p class="dest-desc">The IT Hub. Cyber Towers, corporate clusters, premium shopping malls, and elite dining venues.</p>
+                    </div>
+                </div>
+                
+                <div class="dest-card">
+                    <div class="dest-img-placeholder">
+                        <img src="images/golconda.png" alt="Golconda Fort Hyderabad">
+                    </div>
+                    <div class="dest-info">
+                        <h3 class="dest-name">Golconda Fort</h3>
+                        <p class="dest-desc">Ancient historic fortress. Magnificent ruins, acoustic echo features, and beautiful evening light shows.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Offers & Promotions Section -->
+        <section class="offers">
+            <div class="section-header">
+                <h2>Exclusive Ride Offers</h2>
+                <p>Save on your daily commutes. Check out active discount coupons.</p>
+            </div>
+            
+            <div class="grid-2">
+                <div class="card offer-card">
+                    <h3 class="card-title" style="color: var(--primary);">First Ride Offer - 50% OFF</h3>
+                    <p>New to CabFlow? Book your first ride and get an instant flat 50% discount on standard fare (up to $100).</p>
+                    <span class="offer-code" id="offer-first">CODE: FIRST50</span>
+                </div>
+                
+                <div class="card offer-card">
+                    <h3 class="card-title" style="color: var(--secondary);">Rainy Day / Peak Protection</h3>
+                    <p>Flat rates during heavy rains or peak business hours. No surge prices when booking Sedan or Luxury classes.</p>
+                    <span class="offer-code" id="offer-peak" style="color: var(--secondary); border-color: var(--secondary); background: rgba(0, 240, 255, 0.15)">CODE: FLATPEAK</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Popular Routes Section -->
+        <section class="routes-section" style="padding: 4rem 0; border-top: 1px solid var(--border-color);">
+            <div class="section-header">
+                <h2>Popular Standard Routes</h2>
+                <p>Select a route to instantly launch the booking form with pre-filled locations.</p>
+            </div>
+            <div class="grid-3">
+                <div class="card route-card" onclick="bookRoute('Madhapur', 'Gachibowli')" style="cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: 700;">Daily Commute</span>
+                        <h3 style="font-size: 1.2rem; margin: 0.25rem 0 0.5rem;">Madhapur ➜ Gachibowli</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">IT Corridor link. Avoid dynamic peak surge pricing on this standard route.</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                        <span style="font-weight: 700; color: var(--primary);">Est. ₹200</span>
+                        <span class="btn btn-primary btn-sm">Book Route</span>
+                    </div>
+                </div>
+                
+                <div class="card route-card" onclick="bookRoute('Secunderabad', 'Begumpet Airport')" style="cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--secondary); text-transform: uppercase; font-weight: 700;">Transit Express</span>
+                        <h3 style="font-size: 1.2rem; margin: 0.25rem 0 0.5rem;">Secunderabad ➜ Begumpet</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">City center transit link. Standard direct pathway through the main highway.</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                        <span style="font-weight: 700; color: var(--primary);">Est. ₹180</span>
+                        <span class="btn btn-primary btn-sm">Book Route</span>
+                    </div>
+                </div>
+
+                <div class="card route-card" onclick="bookRoute('Charminar', 'Golconda Fort')" style="cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: 700;">Heritage Tour</span>
+                        <h3 style="font-size: 1.2rem; margin: 0.25rem 0 0.5rem;">Charminar ➜ Golconda Fort</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Historic landmark tour. Safe direct navigation across cultural heritage sites.</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                        <span style="font-weight: 700; color: var(--primary);">Est. ₹350</span>
+                        <span class="btn btn-primary btn-sm">Book Route</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Pre-fill booking route details
+        function bookRoute(pickup, drop) {
+            if (!Session.isLoggedIn()) {
+                showToast('Please sign in as a customer to book this route.', 'warning');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
+                return;
+            }
+            window.location.href = `booking.html?pickup=${encodeURIComponent(pickup)}&drop=${encodeURIComponent(drop)}`;
+        }
+
+        // Redirect to booking page if already logged in as customer when clicking CTA
+        document.getElementById('btn-hero-book').addEventListener('click', (e) => {
+            if (!Session.isLoggedIn()) {
+                e.preventDefault();
+                showToast('Please sign in as a customer to book a ride.', 'warning');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

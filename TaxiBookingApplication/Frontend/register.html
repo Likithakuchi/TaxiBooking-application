@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Registration - CabFlow</title>
+    <meta name="description" content="Join CabFlow. Create your customer profile today to start booking fast rides, checking vehicle capacities, and managing digital payments.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <div class="auth-container" style="max-width: 500px;">
+            <div class="auth-header">
+                <h2>Create Account</h2>
+                <p>Register as a CabFlow Customer to begin booking rides</p>
+            </div>
+            
+            <div class="card">
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="reg-name">Full Name</label>
+                        <input type="text" id="reg-name" class="form-control" placeholder="Rahul Sharma" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-email">Email Address</label>
+                        <input type="email" id="reg-email" class="form-control" placeholder="rahul@gmail.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-phone">Phone Number</label>
+                        <input type="tel" id="reg-phone" class="form-control" placeholder="9876543210" pattern="[0-9]{10}" title="Ten digit phone number" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-address">Address / City</label>
+                        <input type="text" id="reg-address" class="form-control" placeholder="Hyderabad" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-password">Password</label>
+                        <input type="password" id="reg-password" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="btn-register-submit">Register</button>
+                </form>
+                
+                <div class="auth-footer">
+                    Already have an account? <a href="login.html">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (Session.isLoggedIn()) {
+            window.location.href = 'customer_dashboard.html';
+        }
+
+        // Form submission handler
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const full_name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const phone = document.getElementById('reg-phone').value;
+            const address = document.getElementById('reg-address').value;
+            const password = document.getElementById('reg-password').value;
+            
+            try {
+                const response = await apiFetch('/customers/add/', {
+                    method: 'POST',
+                    body: { full_name, email, phone, address, password }
+                });
+                
+                showToast('Registration successful! Logging you in...', 'success');
+                
+                // Set the session user
+                Session.setUser(response, 'customer');
+                
+                setTimeout(() => {
+                    window.location.href = 'customer_dashboard.html';
+                }, 1200);
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        });
+    </script>
+</body>
+</html>

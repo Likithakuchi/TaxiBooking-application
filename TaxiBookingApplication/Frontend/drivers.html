@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Network - CabFlow</title>
+    <meta name="description" content="View CabFlow driver registration portal. Add details, associate vehicles, configure passenger capacity, and view experience.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <div class="dashboard-header" id="drivers-header">
+            <div>
+                <h1 style="font-size: 2.25rem;">Driver Network</h1>
+                <p style="color: var(--text-muted);">Manage drivers, associate vehicles, and check availability statuses</p>
+            </div>
+        </div>
+
+        <!-- Layout splits into forms and displays -->
+        <div class="grid-2" id="driver-layout">
+            <!-- Driver Registration Form (Visible when not logged in as driver) -->
+            <div class="card" id="driver-auth-card">
+                <h2 class="card-title" id="driver-form-title">Register as a Driver</h2>
+                <form id="driver-registration-form">
+                    <h3 style="font-size: 0.95rem; text-transform: uppercase; color: var(--primary); margin-bottom: 1rem;">1. Personal Details</h3>
+                    
+                    <div class="form-group">
+                        <label for="drv-name">Full Name</label>
+                        <input type="text" id="drv-name" class="form-control" placeholder="Ramesh Kumar" required>
+                    </div>
+                    
+                    <div class="grid-2" style="gap: 1rem; margin-bottom: 0;">
+                        <div class="form-group">
+                            <label for="drv-email">Email Address</label>
+                            <input type="email" id="drv-email" class="form-control" placeholder="ramesh@gmail.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="drv-phone">Phone Number</label>
+                            <input type="tel" id="drv-phone" class="form-control" placeholder="9988776655" required>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group">
+                            <label for="drv-license">License Number</label>
+                            <input type="text" id="drv-license" class="form-control" placeholder="DL123456789" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="drv-exp">Years of Experience</label>
+                            <input type="number" id="drv-exp" class="form-control" placeholder="5" min="1" required>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 0.95rem; text-transform: uppercase; color: var(--secondary); margin-bottom: 1rem;">2. Vehicle Details</h3>
+                    
+                    <div class="grid-2" style="gap: 1rem; margin-bottom: 0;">
+                        <div class="form-group">
+                            <label for="veh-model">Vehicle Model / Brand</label>
+                            <input type="text" id="veh-model" class="form-control" placeholder="Hyundai Verna" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="veh-number">Vehicle Number</label>
+                            <input type="text" id="veh-number" class="form-control" placeholder="TS09AB1234" required>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2" style="gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label for="veh-type">Vehicle Type</label>
+                            <select id="veh-type" class="form-control" required>
+                                <option value="Sedan">Sedan</option>
+                                <option value="Hatchback">Hatchback</option>
+                                <option value="SUV">SUV</option>
+                                <option value="Auto">Auto</option>
+                                <option value="Bike">Bike</option>
+                                <option value="Luxury">Luxury</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="veh-capacity">Seating Capacity</label>
+                            <input type="number" id="veh-capacity" class="form-control" placeholder="4" min="1" max="10" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-driver-register">Register as Driver</button>
+                </form>
+            </div>
+
+            <!-- Driver Self Profile (Visible when logged in as driver) -->
+            <div class="card" id="driver-profile-card" style="display: none;">
+                <h2 class="card-title" style="color: var(--primary);">My Driver Profile</h2>
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    
+                    <div style="display: flex; align-items: center; gap: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+                        <div class="avatar" style="width: 60px; height: 60px; font-size: 1.75rem;" id="profile-avatar">R</div>
+                        <div>
+                            <h3 id="profile-name" style="font-size: 1.5rem;">Ramesh Kumar</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;" id="profile-email">ramesh@gmail.com</p>
+                        </div>
+                    </div>
+
+                    <div class="grid-2" style="gap: 1rem;">
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Phone</span>
+                            <p id="profile-phone" style="font-weight: 600;">9988776655</p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">License</span>
+                            <p id="profile-license" style="font-weight: 600;">DL123456789</p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Experience</span>
+                            <p id="profile-exp" style="font-weight: 600;">5 Years</p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Driver Rating</span>
+                            <p style="font-weight: 600; color: var(--primary);">4.8 ★ (Excellent)</p>
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Vehicle Details</h3>
+                        <div class="grid-2" style="gap: 1rem;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Model</span>
+                                <p id="profile-veh-model" style="font-weight: 600;">Hyundai Verna</p>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Plate Number</span>
+                                <p id="profile-veh-number" style="font-weight: 600;">TS09AB1234</p>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Type</span>
+                                <p id="profile-veh-type" style="font-weight: 600;">Sedan</p>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Capacity</span>
+                                <p id="profile-veh-capacity" style="font-weight: 600;">4 Passengers</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                        <label for="profile-availability" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">Availability Status</label>
+                        <select id="profile-availability" class="form-control" style="border-color: var(--primary);" onchange="updateAvailability(this.value)">
+                            <option value="Available">Available</option>
+                            <option value="Busy">Busy</option>
+                            <option value="Offline">Offline</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List of Drivers network -->
+            <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <h2 class="card-title">Registered Active Cabs</h2>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; max-height: 500px;" id="drivers-list-container">
+                    <p style="color: var(--text-muted); text-align: center;">Loading registered drivers...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        const user = Session.getUser();
+        const role = Session.getRole();
+
+        // Configure UI depending on role
+        if (role === 'driver') {
+            document.getElementById('driver-auth-card').style.display = 'none';
+            document.getElementById('driver-profile-card').style.display = 'block';
+            loadDriverProfile();
+        }
+
+        // Set default seating capacity on type selection change
+        document.getElementById('veh-type').addEventListener('change', (e) => {
+            const capacities = {
+                'Sedan': 4,
+                'Hatchback': 4,
+                'SUV': 6,
+                'Auto': 3,
+                'Bike': 1,
+                'Luxury': 4
+            };
+            document.getElementById('veh-capacity').value = capacities[e.target.value] || 4;
+        });
+
+        // Load logged in driver profile
+        async function loadDriverProfile() {
+            try {
+                // Populate driver details
+                document.getElementById('profile-avatar').innerText = user.driver_name.charAt(0).toUpperCase();
+                document.getElementById('profile-name').innerText = user.driver_name;
+                document.getElementById('profile-email').innerText = user.email;
+                document.getElementById('profile-phone').innerText = user.phone;
+                document.getElementById('profile-license').innerText = user.license_number;
+                document.getElementById('profile-exp').innerText = `${user.experience} Years`;
+                document.getElementById('profile-availability').value = user.availability;
+
+                // Fetch associated vehicle details
+                const vehicles = await apiFetch('/vehicles/');
+                const myVehicle = vehicles.find(v => v.driver_name === user.driver_name);
+                
+                if (myVehicle) {
+                    document.getElementById('profile-veh-model').innerText = myVehicle.model;
+                    document.getElementById('profile-veh-number').innerText = myVehicle.vehicle_number;
+                    document.getElementById('profile-veh-type').innerText = myVehicle.vehicle_type;
+                    document.getElementById('profile-veh-capacity').innerText = `${myVehicle.seating_capacity} Passengers`;
+                }
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // Update driver availability status
+        async function updateAvailability(status) {
+            try {
+                const response = await apiFetch(`/drivers/update/${user.driver_id}/`, {
+                    method: 'PUT',
+                    body: { availability: status }
+                });
+                
+                // Update local storage session
+                Session.setUser(response, 'driver');
+                showToast(`Status updated to: ${status}`, 'success');
+                loadDriversList(); // Refresh list
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // Fetch and show all drivers with their vehicles
+        async function loadDriversList() {
+            const listContainer = document.getElementById('drivers-list-container');
+            try {
+                const [drivers, vehicles] = await Promise.all([
+                    apiFetch('/drivers/'),
+                    apiFetch('/vehicles/')
+                ]);
+                
+                if (drivers.length === 0) {
+                    listContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center;">No registered drivers found in the database.</p>`;
+                    return;
+                }
+                
+                listContainer.innerHTML = '';
+                
+                drivers.forEach(d => {
+                    // Match vehicle
+                    const vehicle = vehicles.find(v => v.driver_name === d.driver_name);
+                    
+                    let badgeClass = 'badge-success';
+                    if (d.availability === 'Busy') badgeClass = 'badge-warning';
+                    if (d.availability === 'Offline') badgeClass = 'badge-danger';
+                    
+                    const card = document.createElement('div');
+                    card.style.background = 'rgba(255,255,255,0.03)';
+                    card.style.border = '1px solid var(--border-color)';
+                    card.style.borderRadius = '10px';
+                    card.style.padding = '1rem';
+                    card.style.display = 'flex';
+                    card.style.justifyContent = 'space-between';
+                    card.style.alignItems = 'center';
+                    
+                    card.innerHTML = `
+                        <div>
+                            <strong style="color: #ffffff; font-size: 1rem;">${d.driver_name}</strong>
+                            <span class="badge ${badgeClass}" style="margin-left: 0.5rem; font-size: 0.65rem;">${d.availability}</span>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                ${d.experience} yrs exp &bull; ${d.phone}
+                            </div>
+                            ${vehicle ? `
+                            <div style="font-size: 0.8rem; color: var(--primary); margin-top: 0.25rem; font-weight: 500;">
+                                ${vehicle.vehicle_type} - ${vehicle.model} (${vehicle.vehicle_number})
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1rem; color: var(--primary); font-weight: 700;">4.8 ★</span>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Rating</div>
+                        </div>
+                    `;
+                    
+                    listContainer.appendChild(card);
+                });
+            } catch (err) {
+                listContainer.innerHTML = `<p style="color: var(--danger); text-align: center;">Error loading drivers: ${err.message}</p>`;
+            }
+        }
+
+        // Initialize drivers list
+        loadDriversList();
+
+        // Handle driver registration submit
+        document.getElementById('driver-registration-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const driver_name = document.getElementById('drv-name').value;
+            const email = document.getElementById('drv-email').value;
+            const phone = document.getElementById('drv-phone').value;
+            const license_number = document.getElementById('drv-license').value;
+            const experience = parseInt(document.getElementById('drv-exp').value);
+            
+            const model = document.getElementById('veh-model').value;
+            const vehicle_number = document.getElementById('veh-number').value;
+            const vehicle_type = document.getElementById('veh-type').value;
+            const seating_capacity = parseInt(document.getElementById('veh-capacity').value);
+            
+            try {
+                showToast('Registering Driver profile...', 'info');
+                
+                // Add driver
+                const driverResponse = await apiFetch('/drivers/add/', {
+                    method: 'POST',
+                    body: {
+                        driver_name,
+                        email,
+                        phone,
+                        license_number,
+                        experience,
+                        availability: 'Available'
+                    }
+                });
+                
+                // Add vehicle associated with driver
+                await apiFetch('/vehicles/add/', {
+                    method: 'POST',
+                    body: {
+                        driver_name,
+                        vehicle_type,
+                        vehicle_number,
+                        seating_capacity,
+                        model
+                    }
+                });
+                
+                showToast('Driver and Vehicle Registered Successfully!', 'success');
+                
+                // If not logged in, auto login this driver
+                if (!Session.isLoggedIn()) {
+                    Session.setUser(driverResponse, 'driver');
+                    setTimeout(() => {
+                        window.location.href = 'driver_dashboard.html';
+                    }, 1200);
+                } else {
+                    document.getElementById('driver-registration-form').reset();
+                    loadDriversList();
+                }
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        });
+    </script>
+</body>
+</html>

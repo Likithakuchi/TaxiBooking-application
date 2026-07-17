@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - CabFlow</title>
+    <meta name="description" content="Access your CabFlow account. Track your taxi rides, manage bookings, view driver statuses, or view transaction invoices.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <div class="auth-container">
+            <div class="auth-header">
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account to continue</p>
+            </div>
+            
+            <div class="card">
+                <!-- Role Toggle Selector -->
+                <div class="role-toggle">
+                    <button class="role-btn active" id="btn-role-customer" onclick="setRole('customer')">Customer</button>
+                    <button class="role-btn" id="btn-role-driver" onclick="setRole('driver')">Driver</button>
+                    <button class="role-btn" id="btn-role-admin" onclick="setRole('admin')">Admin</button>
+                </div>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" class="form-control" placeholder="name@domain.com" required>
+                    </div>
+                    
+                    <div class="form-group" id="password-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" class="form-control" placeholder="Enter password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="btn-login-submit">Sign In</button>
+                </form>
+                
+                <div class="auth-footer" id="register-redirect">
+                    Don't have a Customer account? <a href="register.html">Register here</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        let currentRole = 'customer';
+        
+        // Handle switching roles
+        function setRole(role) {
+            currentRole = role;
+            
+            // Update button styles
+            document.getElementById('btn-role-customer').classList.toggle('active', role === 'customer');
+            document.getElementById('btn-role-driver').classList.toggle('active', role === 'driver');
+            document.getElementById('btn-role-admin').classList.toggle('active', role === 'admin');
+            
+            // Adjust fields based on role
+            const passwordGroup = document.getElementById('password-group');
+            const registerRedirect = document.getElementById('register-redirect');
+            const passInput = document.getElementById('login-password');
+            
+            if (role === 'driver') {
+                passwordGroup.style.display = 'none';
+                passInput.removeAttribute('required');
+                registerRedirect.innerHTML = `Not registered as a Driver? <a href="drivers.html">Add Driver details here</a>`;
+            } else {
+                passwordGroup.style.display = 'flex';
+                passInput.setAttribute('required', 'required');
+                
+                if (role === 'customer') {
+                    registerRedirect.innerHTML = `Don't have a Customer account? <a href="register.html">Register here</a>`;
+                } else {
+                    registerRedirect.innerHTML = `Admin sign-in requires credentials.`;
+                }
+            }
+        }
+
+        // Redirect if already logged in
+        if (Session.isLoggedIn()) {
+            const role = Session.getRole();
+            if (role === 'customer') window.location.href = 'customer_dashboard.html';
+            else if (role === 'driver') window.location.href = 'driver_dashboard.html';
+            else if (role === 'admin') window.location.href = 'admin_dashboard.html';
+        }
+        
+        // Handle login submission
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                if (currentRole === 'customer') {
+                    const response = await apiFetch('/customers/login/', {
+                        method: 'POST',
+                        body: { email, password }
+                    });
+                    
+                    Session.setUser(response.user, 'customer');
+                    showToast(`Welcome back, ${response.user.full_name}!`, 'success');
+                    setTimeout(() => {
+                        window.location.href = 'customer_dashboard.html';
+                    }, 1000);
+                    
+                } else if (currentRole === 'driver') {
+                    const response = await apiFetch('/drivers/login/', {
+                        method: 'POST',
+                        body: { email }
+                    });
+                    
+                    Session.setUser(response.user, 'driver');
+                    showToast(`Welcome, Driver ${response.user.driver_name}!`, 'success');
+                    setTimeout(() => {
+                        window.location.href = 'driver_dashboard.html';
+                    }, 1000);
+                    
+                } else if (currentRole === 'admin') {
+                    // Admin uses static credentials as standard for simple mock databases
+                    if (email === 'admin@cabflow.com' && password === 'admin123') {
+                        Session.setUser({ full_name: 'CabFlow Administrator', email: 'admin@cabflow.com' }, 'admin');
+                        showToast('Access granted. Welcome Administrator.', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'admin_dashboard.html';
+                        }, 1000);
+                    } else {
+                        showToast('Invalid Admin Credentials (use: admin@cabflow.com / admin123)', 'danger');
+                    }
+                }
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        });
+    </script>
+</body>
+</html>

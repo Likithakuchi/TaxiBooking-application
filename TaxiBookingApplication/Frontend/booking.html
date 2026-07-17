@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Ride - CabFlow</title>
+    <meta name="description" content="Book your next ride with CabFlow. Select from Sedan, Hatchback, SUV, Auto, Bike, and Luxury models. Get immediate fare estimates.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <div class="dashboard-header">
+            <div>
+                <h1 style="font-size: 2.25rem;">Book A Taxi Ride</h1>
+                <p style="color: var(--text-muted);">Enter your coordinates and choose your vehicle preference</p>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Booking Form -->
+            <div class="card">
+                <h2 class="card-title" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    Ride Details
+                </h2>
+                
+                <form id="booking-form">
+                    <div class="form-group">
+                        <label for="book-pickup">Pickup Location</label>
+                        <input type="text" id="book-pickup" class="form-control" placeholder="e.g. Madhapur" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="book-drop">Drop Location</label>
+                        <input type="text" id="book-drop" class="form-control" placeholder="e.g. Gachibowli" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Select Vehicle Type</label>
+                        <!-- Vehicle Options Grid -->
+                        <div class="vehicle-selector">
+                            <div class="vehicle-type-option selected" data-type="Sedan" data-rate="15">
+                                <span class="vehicle-type-icon">🚗</span>
+                                <span class="vehicle-type-name">Sedan</span>
+                                <span class="vehicle-type-capacity">Cap: 4</span>
+                            </div>
+                            <div class="vehicle-type-option" data-type="Hatchback" data-rate="10">
+                                <span class="vehicle-type-icon">🚗</span>
+                                <span class="vehicle-type-name">Hatchback</span>
+                                <span class="vehicle-type-capacity">Cap: 4</span>
+                            </div>
+                            <div class="vehicle-type-option" data-type="SUV" data-rate="22">
+                                <span class="vehicle-type-icon">🚙</span>
+                                <span class="vehicle-type-name">SUV</span>
+                                <span class="vehicle-type-capacity">Cap: 6</span>
+                            </div>
+                            <div class="vehicle-type-option" data-type="Auto" data-rate="8">
+                                <span class="vehicle-type-icon">🛺</span>
+                                <span class="vehicle-type-name">Auto</span>
+                                <span class="vehicle-type-capacity">Cap: 3</span>
+                            </div>
+                            <div class="vehicle-type-option" data-type="Bike" data-rate="5">
+                                <span class="vehicle-type-icon">🏍️</span>
+                                <span class="vehicle-type-name">Bike</span>
+                                <span class="vehicle-type-capacity">Cap: 1</span>
+                            </div>
+                            <div class="vehicle-type-option" data-type="Luxury" data-rate="40">
+                                <span class="vehicle-type-icon">🏎️</span>
+                                <span class="vehicle-type-name">Luxury</span>
+                                <span class="vehicle-type-capacity">Cap: 4</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fare Estimate -->
+                    <div class="fare-estimate-box">
+                        <div>
+                            <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">Estimated Fare</span>
+                            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.4);" id="estimate-details">Base Fare + Distance Fare</p>
+                        </div>
+                        <div class="fare-amount" id="estimated-fare-display">₹150</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-confirm-booking">Book Ride</button>
+                </form>
+            </div>
+            
+            <!-- Map Placeholder / Interactive status -->
+            <div class="map-placeholder">
+                <svg viewBox="0 0 100 100" width="150" height="150" fill="none" stroke="var(--primary)" stroke-width="0.5">
+                    <circle cx="50" cy="50" r="45" stroke-dasharray="2 4"/>
+                    <circle cx="50" cy="50" r="30"/>
+                    <circle cx="50" cy="50" r="15"/>
+                    <line x1="50" y1="5" x2="50" y2="95"/>
+                    <line x1="5" y1="50" x2="95" y2="50"/>
+                    <!-- Pulse core -->
+                    <circle cx="50" cy="50" r="4" fill="var(--primary)"/>
+                </svg>
+                <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500; margin-top: 1rem;">Radar Scan - Searching Nearby Cabs</p>
+                
+                <div class="map-status-overlay">
+                    <div>
+                        <strong style="color: #ffffff;">CabFlow Routing Engine</strong>
+                        <p style="color: var(--text-muted); font-size: 0.75rem;" id="routing-status">Awaiting destination...</p>
+                    </div>
+                    <span class="badge badge-info">GPS ACTIVE</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Restrict this page to customers
+        if (!enforceRole(['customer'])) {
+            throw new Error("Access Denied");
+        }
+
+        const customer = Session.getUser();
+        let selectedVehicleType = 'Sedan';
+        let selectedRate = 15;
+        let distanceKm = 10; // Default mocked distance
+
+        // Dynamic distance calculation based on input string length to make it interactive!
+        function updateEstimate() {
+            const pickup = document.getElementById('book-pickup').value.trim();
+            const drop = document.getElementById('book-drop').value.trim();
+            
+            if (pickup && drop) {
+                // Determine a pseudo-random distance based on character lengths
+                distanceKm = Math.max(5, (pickup.length + drop.length) % 25 + 3);
+                document.getElementById('routing-status').innerText = `${pickup} ➜ ${drop} (${distanceKm} km)`;
+            } else {
+                document.getElementById('routing-status').innerText = 'Enter pickup & drop location';
+            }
+            
+            const baseFare = 50; // Base taxi charge
+            const totalFare = baseFare + (distanceKm * selectedRate);
+            document.getElementById('estimated-fare-display').innerText = `₹${totalFare}`;
+            document.getElementById('estimate-details').innerText = `Base ₹50 + ₹${selectedRate}/km x ${distanceKm}km`;
+        }
+
+        // Add input listeners to update estimate dynamically
+        document.getElementById('book-pickup').addEventListener('input', updateEstimate);
+        document.getElementById('book-drop').addEventListener('input', updateEstimate);
+
+        // Vehicle selector click handlers
+        document.querySelectorAll('.vehicle-type-option').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.vehicle-type-option').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                
+                selectedVehicleType = card.getAttribute('data-type');
+                selectedRate = parseInt(card.getAttribute('data-rate'));
+                updateEstimate();
+            });
+        });
+
+        // Parse URL query parameters to pre-fill pickup and drop
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPickup = urlParams.get('pickup');
+        const urlDrop = urlParams.get('drop');
+        if (urlPickup) document.getElementById('book-pickup').value = decodeURIComponent(urlPickup);
+        if (urlDrop) document.getElementById('book-drop').value = decodeURIComponent(urlDrop);
+
+        // Initialize display
+        updateEstimate();
+
+        // Handle booking submission
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const pickup_location = document.getElementById('book-pickup').value;
+            const drop_location = document.getElementById('book-drop').value;
+            
+            // Calculate final fare
+            const baseFare = 50;
+            const fare = baseFare + (distanceKm * selectedRate);
+            
+            // Fetch current date in YYYY-MM-DD
+            const today = new Date();
+            const booking_date = today.toISOString().split('T')[0];
+            
+            showToast('Searching for nearby drivers...', 'info');
+            
+            try {
+                // Find drivers that are available
+                const [drivers, vehicles] = await Promise.all([
+                    apiFetch('/drivers/'),
+                    apiFetch('/vehicles/')
+                ]);
+                
+                const matchingVehicles = vehicles.filter(v => v.vehicle_type === selectedVehicleType);
+                
+                let driver_name = 'Pending Driver Assignment';
+                let assignedDriverObj = null;
+                let assignedVehicleObj = null;
+
+                if (matchingVehicles.length > 0) {
+                    // Match with available driver
+                    const possibleDrivers = drivers.filter(d => 
+                        d.availability === 'Available' && 
+                        matchingVehicles.some(mv => mv.driver_name === d.driver_name)
+                    );
+                    
+                    if (possibleDrivers.length > 0) {
+                        assignedDriverObj = possibleDrivers[0];
+                        driver_name = assignedDriverObj.driver_name;
+                        
+                        // Temporarily mark driver as busy
+                        await apiFetch(`/drivers/update/${assignedDriverObj.driver_id}/`, {
+                            method: 'PUT',
+                            body: { availability: 'Busy' }
+                        });
+                    } else {
+                        // Fallback to any matching driver's name even if busy/offline for testing
+                        assignedDriverObj = drivers.find(d => d.driver_name === matchingVehicles[0].driver_name) || drivers[0];
+                        driver_name = assignedDriverObj ? assignedDriverObj.driver_name : matchingVehicles[0].driver_name;
+                    }
+                    
+                    assignedVehicleObj = vehicles.find(v => v.driver_name === driver_name);
+                } else if (drivers.length > 0) {
+                    assignedDriverObj = drivers[0];
+                    driver_name = assignedDriverObj.driver_name;
+                    assignedVehicleObj = vehicles.find(v => v.driver_name === driver_name);
+                }
+                
+                // Create Booking
+                const booking = await apiFetch('/bookings/add/', {
+                    method: 'POST',
+                    body: {
+                        customer_name: customer.full_name,
+                        driver_name: driver_name,
+                        pickup_location,
+                        drop_location,
+                        booking_date,
+                        fare,
+                        ride_status: 'Requested'
+                    }
+                });
+                
+                showToast('Taxi Booked Successfully!', 'success');
+                
+                // Call location tracking simulation on map container
+                showMapTracking(booking, assignedDriverObj, assignedVehicleObj);
+                
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        });
+
+        // Simulates dynamic map location tracking and shows driver and vehicle details
+        function showMapTracking(booking, driver, vehicle) {
+            const mapContainer = document.querySelector('.map-placeholder');
+            if (!mapContainer) return;
+            
+            // Re-render map container as a tracking dashboard
+            mapContainer.style.background = 'rgba(20, 20, 30, 0.98)';
+            mapContainer.style.borderColor = 'var(--primary)';
+            
+            const driverName = driver ? driver.driver_name : 'Ramesh Kumar';
+            const experience = driver ? `${driver.experience} Years Exp` : '5 Years Exp';
+            const vehicleModel = vehicle ? vehicle.model : 'Hyundai Verna';
+            const vehicleNumber = vehicle ? vehicle.vehicle_number : 'TS09AB1234';
+            const vehicleType = vehicle ? vehicle.vehicle_type : 'Sedan';
+            const rating = "4.8 ★";
+
+            mapContainer.innerHTML = `
+                <!-- Animated Trajectory Map -->
+                <div style="width: 100%; height: 55%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 1rem;">
+                    <svg viewBox="0 0 300 150" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Connecting dotted route line -->
+                        <path d="M 30 110 Q 150 20 270 110" stroke="var(--primary)" stroke-width="2" stroke-dasharray="5 5" fill="none"/>
+                        
+                        <!-- Start / Pickup pin -->
+                        <circle cx="30" cy="110" r="5" fill="var(--success)"/>
+                        <circle cx="30" cy="110" r="10" stroke="var(--success)" stroke-width="1.5" opacity="0.5">
+                            <animate attributeName="r" values="5;12;5" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <text x="20" y="130" fill="var(--text-main)" font-size="8" font-weight="600">${booking.pickup_location}</text>
+                        
+                        <!-- End / Drop pin -->
+                        <circle cx="270" cy="110" r="5" fill="var(--danger)"/>
+                        <circle cx="270" cy="110" r="10" stroke="var(--danger)" stroke-width="1.5" opacity="0.5">
+                            <animate attributeName="r" values="5;12;5" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <text x="240" y="130" fill="var(--text-main)" font-size="8" font-weight="600">${booking.drop_location}</text>
+                        
+                        <!-- Moving cab marker -->
+                        <g id="moving-cab" transform="translate(-10, -10)">
+                            <!-- Car body icon -->
+                            <rect x="0" y="4" width="20" height="12" rx="3" fill="%23ffb800"/>
+                            <rect x="4" y="0" width="12" height="6" rx="2" fill="%23111827"/>
+                            <circle cx="5" cy="16" r="3" fill="%23374151"/>
+                            <circle cx="15" cy="16" r="3" fill="%23374151"/>
+                            <animateMotion path="M 30 100 Q 150 10 270 100" dur="8s" repeatCount="indefinite"/>
+                        </g>
+                    </svg>
+                    
+                    <div style="position: absolute; top: 1rem; left: 1rem; background: rgba(9, 9, 14, 0.95); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                        <span style="color: var(--success); font-weight: 700;">● LIVE</span> GPS Tracking Active
+                    </div>
+                </div>
+
+                <!-- Driver and Vehicle Details Dashboard -->
+                <div style="width: 100%; height: 45%; background: rgba(9, 9, 14, 0.98); border-top: 1px solid var(--border-color); padding: 1rem; display: flex; flex-direction: column; justify-content: space-between; border-radius: 0 0 16px 16px; z-index: 10;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div class="avatar" style="width: 36px; height: 36px; font-size: 1rem; background: var(--primary); color: var(--text-dark);">${driverName.charAt(0)}</div>
+                            <div>
+                                <strong style="color: #ffffff; font-size: 0.95rem;">${driverName}</strong>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${experience}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: var(--primary); font-weight: 700; font-size: 1rem;">${rating}</span>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">Rating</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.25rem 0;">
+                        <div>
+                            <span style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Vehicle Cab</span>
+                            <p style="font-weight: 600; color: var(--primary);">${vehicleModel} (${vehicleType})</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Plate Number</span>
+                            <p style="font-weight: 600; color: #ffffff;">${vehicleNumber}</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <a href="payments.html?booking_id=${booking.booking_id}" class="btn btn-primary btn-sm" style="flex: 1; padding: 0.6rem; font-size: 0.85rem;">Proceed to Payment (₹${booking.fare.toFixed(2)})</a>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

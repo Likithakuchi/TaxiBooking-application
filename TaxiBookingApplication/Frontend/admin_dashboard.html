@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CabFlow Panel</title>
+    <meta name="description" content="Access CabFlow Admin panel. Full CRUD actions across customer database accounts, driver listings, vehicle categories, active bookings, and payments.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <div class="dashboard-header">
+            <div>
+                <h1 style="font-size: 2.25rem;">Administrative Console</h1>
+                <p style="color: var(--text-muted);">Manage platform users, inspect listings, modify bookings, and handle payments</p>
+            </div>
+        </div>
+
+        <!-- Tab Selector -->
+        <div class="admin-tabs">
+            <div class="admin-tab active" data-tab="customers">Customers</div>
+            <div class="admin-tab" data-tab="drivers">Drivers</div>
+            <div class="admin-tab" data-tab="vehicles">Vehicles</div>
+            <div class="admin-tab" data-tab="bookings">Bookings</div>
+            <div class="admin-tab" data-tab="payments">Payments</div>
+        </div>
+
+        <!-- Table View Section -->
+        <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <h2 class="card-title" id="tab-table-title" style="margin-bottom: 0;">Manage Customers</h2>
+                <button class="btn btn-primary btn-sm" id="btn-add-record">
+                    <span style="font-size: 1.2rem; font-weight: 700; line-height: 1;">+</span> Add Record
+                </button>
+            </div>
+            
+            <div class="table-container">
+                <table id="admin-table">
+                    <thead id="admin-table-head">
+                        <!-- Populated dynamically -->
+                    </thead>
+                    <tbody id="admin-table-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MODAL WINDOW FOR ADD/EDIT -->
+        <div class="modal" id="crud-modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <h2 id="modal-title" style="margin-bottom: 1.5rem; color: var(--primary);">Add Customer</h2>
+                
+                <form id="modal-form">
+                    <input type="hidden" id="form-action" value="add">
+                    <input type="hidden" id="record-id">
+                    
+                    <div id="modal-form-fields">
+                        <!-- Form fields dynamically injected based on active tab -->
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="modal-submit-btn">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Restrict this page to Admin only
+        if (!enforceRole(['admin'])) {
+            throw new Error("Access Denied");
+        }
+
+        let activeTab = 'customers';
+        let records = [];
+
+        // Tab Switching Click Listeners
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                activeTab = tab.getAttribute('data-tab');
+                
+                document.getElementById('tab-table-title').innerText = `Manage ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`;
+                loadRecords();
+            });
+        });
+
+        // Add Record Trigger
+        document.getElementById('btn-add-record').addEventListener('click', () => {
+            openModal('add');
+        });
+
+        // Initialize display
+        loadRecords();
+
+        // Load active tab records from Backend APIs
+        async function loadRecords() {
+            const tableHead = document.getElementById('admin-table-head');
+            const tableBody = document.getElementById('admin-table-body');
+            
+            tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Loading ${activeTab}...</td></tr>`;
+            
+            try {
+                const endpoint = `/${activeTab}/`;
+                records = await apiFetch(endpoint);
+                
+                tableBody.innerHTML = '';
+                
+                if (records.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">No records found in database.</td></tr>`;
+                    return;
+                }
+                
+                // Populate headers and rows depending on activeTab
+                if (activeTab === 'customers') {
+                    tableHead.innerHTML = `
+                        <tr>
+                            <th>Customer ID</th>
+                            <th>Full Name</th>
+                            <th>Email Address</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Password</th>
+                            <th>Actions</th>
+                        </tr>
+                    `;
+                    
+                    records.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${c.customer_id}</strong></td>
+                            <td>${c.full_name}</td>
+                            <td>${c.email}</td>
+                            <td>${c.phone}</td>
+                            <td>${c.address}</td>
+                            <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${c.password}</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm" onclick="openModal('edit', ${c.customer_id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecord(${c.customer_id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                    
+                } else if (activeTab === 'drivers') {
+                    tableHead.innerHTML = `
+                        <tr>
+                            <th>Driver ID</th>
+                            <th>Driver Name</th>
+                            <th>Email Address</th>
+                            <th>Phone</th>
+                            <th>License</th>
+                            <th>Experience</th>
+                            <th>Availability</th>
+                            <th>Actions</th>
+                        </tr>
+                    `;
+                    
+                    records.forEach(d => {
+                        let badgeClass = 'badge-success';
+                        if (d.availability === 'Busy') badgeClass = 'badge-warning';
+                        if (d.availability === 'Offline') badgeClass = 'badge-danger';
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${d.driver_id}</strong></td>
+                            <td>${d.driver_name}</td>
+                            <td>${d.email}</td>
+                            <td>${d.phone}</td>
+                            <td>${d.license_number}</td>
+                            <td>${d.experience} Years</td>
+                            <td><span class="badge ${badgeClass}">${d.availability}</span></td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm" onclick="openModal('edit', ${d.driver_id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecord(${d.driver_id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                    
+                } else if (activeTab === 'vehicles') {
+                    tableHead.innerHTML = `
+                        <tr>
+                            <th>Vehicle ID</th>
+                            <th>Driver Name</th>
+                            <th>Vehicle Type</th>
+                            <th>Plate Number</th>
+                            <th>Seating Capacity</th>
+                            <th>Model</th>
+                            <th>Actions</th>
+                        </tr>
+                    `;
+                    
+                    records.forEach(v => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${v.vehicle_id}</strong></td>
+                            <td>${v.driver_name}</td>
+                            <td><span class="badge badge-info">${v.vehicle_type}</span></td>
+                            <td>${v.vehicle_number}</td>
+                            <td>${v.seating_capacity} Seats</td>
+                            <td>${v.model}</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm" onclick="openModal('edit', ${v.vehicle_id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecord(${v.vehicle_id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                    
+                } else if (activeTab === 'bookings') {
+                    tableHead.innerHTML = `
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Customer Name</th>
+                            <th>Driver Name</th>
+                            <th>Pickup Location</th>
+                            <th>Drop Location</th>
+                            <th>Date</th>
+                            <th>Fare</th>
+                            <th>Ride Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    `;
+                    
+                    records.forEach(b => {
+                        let badgeClass = 'badge-info';
+                        if (b.ride_status === 'Completed') badgeClass = 'badge-success';
+                        if (b.ride_status === 'Cancelled') badgeClass = 'badge-danger';
+                        if (b.ride_status === 'In Progress') badgeClass = 'badge-primary';
+                        if (b.ride_status === 'Accepted') badgeClass = 'badge-success';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${b.booking_id}</strong></td>
+                            <td>${b.customer_name}</td>
+                            <td>${b.driver_name || 'Unassigned'}</td>
+                            <td>${b.pickup_location}</td>
+                            <td>${b.drop_location}</td>
+                            <td>${b.booking_date}</td>
+                            <td style="color: var(--primary); font-weight: 600;">₹${b.fare.toFixed(2)}</td>
+                            <td><span class="badge ${badgeClass}">${b.ride_status}</span></td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm" onclick="openModal('edit', ${b.booking_id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecord(${b.booking_id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                    
+                } else if (activeTab === 'payments') {
+                    tableHead.innerHTML = `
+                        <tr>
+                            <th>Payment ID</th>
+                            <th>Booking ID</th>
+                            <th>Customer Name</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Transaction ID</th>
+                            <th>Payment Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    `;
+                    
+                    records.forEach(p => {
+                        let badgeClass = 'badge-success';
+                        if (p.payment_status === 'Pending') badgeClass = 'badge-pending';
+                        if (p.payment_status === 'Failed') badgeClass = 'badge-danger';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${p.payment_id}</strong></td>
+                            <td>#${p.booking_id}</td>
+                            <td>${p.customer_name}</td>
+                            <td style="color: var(--primary); font-weight: 600;">₹${p.amount.toFixed(2)}</td>
+                            <td>${p.payment_method}</td>
+                            <td><span class="badge ${badgeClass}">${p.payment_status}</span></td>
+                            <td style="font-family: monospace; font-size: 0.8rem;">${p.transaction_id}</td>
+                            <td>${p.payment_date}</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm" onclick="openModal('edit', ${p.payment_id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecord(${p.payment_id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--danger);">Error: ${err.message}</td></tr>`;
+            }
+        }
+
+        // Open Modal window for editing/adding records
+        function openModal(action, id = null) {
+            const modal = document.getElementById('crud-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const formAction = document.getElementById('form-action');
+            const recordIdInput = document.getElementById('record-id');
+            const fieldsContainer = document.getElementById('modal-form-fields');
+            
+            formAction.value = action;
+            recordIdInput.value = id || '';
+            
+            // Set dynamic title
+            const capitalizedTab = activeTab.substring(0, activeTab.length - 1); // remove 's'
+            modalTitle.innerText = `${action === 'add' ? 'Add' : 'Edit'} ${capitalizedTab.charAt(0).toUpperCase() + capitalizedTab.slice(1)}`;
+            
+            // Find target record if editing
+            let rec = id ? records.find(r => {
+                if (activeTab === 'customers') return r.customer_id === id;
+                if (activeTab === 'drivers') return r.driver_id === id;
+                if (activeTab === 'vehicles') return r.vehicle_id === id;
+                if (activeTab === 'bookings') return r.booking_id === id;
+                if (activeTab === 'payments') return r.payment_id === id;
+            }) : null;
+            
+            // Generate form fields dynamically based on active tab
+            let fieldsHTML = '';
+            
+            if (activeTab === 'customers') {
+                fieldsHTML = `
+                    ${action === 'add' ? `
+                    <div class="form-group">
+                        <label for="f-customer_id">Customer ID (Leave blank to auto-generate)</label>
+                        <input type="number" id="f-customer_id" class="form-control" placeholder="e.g. 101">
+                    </div>` : ''}
+                    <div class="form-group">
+                        <label for="f-full_name">Full Name</label>
+                        <input type="text" id="f-full_name" class="form-control" value="${rec ? rec.full_name : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-email">Email Address</label>
+                        <input type="email" id="f-email" class="form-control" value="${rec ? rec.email : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-phone">Phone</label>
+                        <input type="text" id="f-phone" class="form-control" value="${rec ? rec.phone : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-address">Address</label>
+                        <input type="text" id="f-address" class="form-control" value="${rec ? rec.address : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-password">Password</label>
+                        <input type="text" id="f-password" class="form-control" value="${rec ? rec.password : ''}" required>
+                    </div>
+                `;
+            } else if (activeTab === 'drivers') {
+                fieldsHTML = `
+                    ${action === 'add' ? `
+                    <div class="form-group">
+                        <label for="f-driver_id">Driver ID (Leave blank to auto-generate)</label>
+                        <input type="number" id="f-driver_id" class="form-control" placeholder="e.g. 201">
+                    </div>` : ''}
+                    <div class="form-group">
+                        <label for="f-driver_name">Driver Name</label>
+                        <input type="text" id="f-driver_name" class="form-control" value="${rec ? rec.driver_name : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-email">Email Address</label>
+                        <input type="email" id="f-email" class="form-control" value="${rec ? rec.email : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-phone">Phone</label>
+                        <input type="text" id="f-phone" class="form-control" value="${rec ? rec.phone : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-license_number">License Number</label>
+                        <input type="text" id="f-license_number" class="form-control" value="${rec ? rec.license_number : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-experience">Experience (Years)</label>
+                        <input type="number" id="f-experience" class="form-control" value="${rec ? rec.experience : ''}" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-availability">Availability</label>
+                        <select id="f-availability" class="form-control" required>
+                            <option value="Available" ${rec && rec.availability === 'Available' ? 'selected' : ''}>Available</option>
+                            <option value="Busy" ${rec && rec.availability === 'Busy' ? 'selected' : ''}>Busy</option>
+                            <option value="Offline" ${rec && rec.availability === 'Offline' ? 'selected' : ''}>Offline</option>
+                        </select>
+                    </div>
+                `;
+            } else if (activeTab === 'vehicles') {
+                fieldsHTML = `
+                    ${action === 'add' ? `
+                    <div class="form-group">
+                        <label for="f-vehicle_id">Vehicle ID (Leave blank to auto-generate)</label>
+                        <input type="number" id="f-vehicle_id" class="form-control" placeholder="e.g. 301">
+                    </div>` : ''}
+                    <div class="form-group">
+                        <label for="f-driver_name">Driver Name</label>
+                        <input type="text" id="f-driver_name" class="form-control" value="${rec ? rec.driver_name : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-vehicle_type">Vehicle Type</label>
+                        <select id="f-vehicle_type" class="form-control" required>
+                            <option value="Sedan" ${rec && rec.vehicle_type === 'Sedan' ? 'selected' : ''}>Sedan</option>
+                            <option value="Hatchback" ${rec && rec.vehicle_type === 'Hatchback' ? 'selected' : ''}>Hatchback</option>
+                            <option value="SUV" ${rec && rec.vehicle_type === 'SUV' ? 'selected' : ''}>SUV</option>
+                            <option value="Auto" ${rec && rec.vehicle_type === 'Auto' ? 'selected' : ''}>Auto</option>
+                            <option value="Bike" ${rec && rec.vehicle_type === 'Bike' ? 'selected' : ''}>Bike</option>
+                            <option value="Luxury" ${rec && rec.vehicle_type === 'Luxury' ? 'selected' : ''}>Luxury</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-vehicle_number">Vehicle Plate Number</label>
+                        <input type="text" id="f-vehicle_number" class="form-control" value="${rec ? rec.vehicle_number : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-seating_capacity">Seating Capacity</label>
+                        <input type="number" id="f-seating_capacity" class="form-control" value="${rec ? rec.seating_capacity : ''}" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-model">Vehicle Model</label>
+                        <input type="text" id="f-model" class="form-control" value="${rec ? rec.model : ''}" required>
+                    </div>
+                `;
+            } else if (activeTab === 'bookings') {
+                fieldsHTML = `
+                    ${action === 'add' ? `
+                    <div class="form-group">
+                        <label for="f-booking_id">Booking ID (Leave blank to auto-generate)</label>
+                        <input type="number" id="f-booking_id" class="form-control" placeholder="e.g. 401">
+                    </div>` : ''}
+                    <div class="form-group">
+                        <label for="f-customer_name">Customer Name</label>
+                        <input type="text" id="f-customer_name" class="form-control" value="${rec ? rec.customer_name : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-driver_name">Driver Name</label>
+                        <input type="text" id="f-driver_name" class="form-control" value="${rec ? rec.driver_name || '' : ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="f-pickup_location">Pickup Location</label>
+                        <input type="text" id="f-pickup_location" class="form-control" value="${rec ? rec.pickup_location : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-drop_location">Drop Location</label>
+                        <input type="text" id="f-drop_location" class="form-control" value="${rec ? rec.drop_location : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-booking_date">Booking Date</label>
+                        <input type="date" id="f-booking_date" class="form-control" value="${rec ? rec.booking_date : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-fare">Total Fare Amount</label>
+                        <input type="number" id="f-fare" class="form-control" value="${rec ? rec.fare : ''}" min="0" step="any" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-ride_status">Ride Status</label>
+                        <select id="f-ride_status" class="form-control" required>
+                            <option value="Requested" ${rec && rec.ride_status === 'Requested' ? 'selected' : ''}>Requested</option>
+                            <option value="Accepted" ${rec && rec.ride_status === 'Accepted' ? 'selected' : ''}>Accepted</option>
+                            <option value="In Progress" ${rec && rec.ride_status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Completed" ${rec && rec.ride_status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            <option value="Cancelled" ${rec && rec.ride_status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                `;
+            } else if (activeTab === 'payments') {
+                fieldsHTML = `
+                    ${action === 'add' ? `
+                    <div class="form-group">
+                        <label for="f-payment_id">Payment ID (Leave blank to auto-generate)</label>
+                        <input type="number" id="f-payment_id" class="form-control" placeholder="e.g. 501">
+                    </div>` : ''}
+                    <div class="form-group">
+                        <label for="f-booking_id">Booking ID</label>
+                        <input type="number" id="f-booking_id" class="form-control" value="${rec ? rec.booking_id : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-customer_name">Customer Name</label>
+                        <input type="text" id="f-customer_name" class="form-control" value="${rec ? rec.customer_name : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-amount">Payment Amount</label>
+                        <input type="number" id="f-amount" class="form-control" value="${rec ? rec.amount : ''}" min="0" step="any" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-payment_method">Payment Method</label>
+                        <select id="f-payment_method" class="form-control" required>
+                            <option value="UPI" ${rec && rec.payment_method === 'UPI' ? 'selected' : ''}>UPI</option>
+                            <option value="Credit Card" ${rec && rec.payment_method === 'Credit Card' ? 'selected' : ''}>Credit Card</option>
+                            <option value="Debit Card" ${rec && rec.payment_method === 'Debit Card' ? 'selected' : ''}>Debit Card</option>
+                            <option value="Wallet" ${rec && rec.payment_method === 'Wallet' ? 'selected' : ''}>Wallet</option>
+                            <option value="Cash" ${rec && rec.payment_method === 'Cash' ? 'selected' : ''}>Cash</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-payment_status">Payment Status</label>
+                        <select id="f-payment_status" class="form-control" required>
+                            <option value="Success" ${rec && rec.payment_status === 'Success' ? 'selected' : ''}>Success</option>
+                            <option value="Pending" ${rec && rec.payment_status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="Failed" ${rec && rec.payment_status === 'Failed' ? 'selected' : ''}>Failed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-transaction_id">Transaction ID</label>
+                        <input type="text" id="f-transaction_id" class="form-control" value="${rec ? rec.transaction_id : ''}" placeholder="e.g. TXN456789123" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="f-payment_date">Payment Date</label>
+                        <input type="date" id="f-payment_date" class="form-control" value="${rec ? rec.payment_date : ''}" required>
+                    </div>
+                `;
+            }
+            
+            fieldsContainer.innerHTML = fieldsHTML;
+            modal.style.display = 'flex';
+        }
+
+        // Close Modal
+        function closeModal() {
+            document.getElementById('crud-modal').style.display = 'none';
+        }
+
+        // Handle Modal Form Submission (Add or Update Record)
+        document.getElementById('modal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const action = document.getElementById('form-action').value;
+            const recordId = document.getElementById('record-id').value;
+            
+            // Gather input fields into body object
+            const body = {};
+            const inputs = document.getElementById('modal-form-fields').querySelectorAll('input, select');
+            inputs.forEach(input => {
+                const id = input.id.replace('f-', '');
+                let val = input.value;
+                if (input.type === 'number') {
+                    val = val === '' ? null : parseFloat(val);
+                }
+                body[id] = val;
+            });
+            
+            let url = '';
+            let method = '';
+            
+            if (action === 'add') {
+                url = `/${activeTab}/add/`;
+                method = 'POST';
+            } else {
+                url = `/${activeTab}/update/${recordId}/`;
+                method = 'PUT';
+            }
+            
+            try {
+                showToast('Saving details...', 'info');
+                await apiFetch(url, {
+                    method: method,
+                    body: body
+                });
+                showToast(`Record ${action === 'add' ? 'created' : 'updated'} successfully!`, 'success');
+                closeModal();
+                loadRecords();
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        });
+
+        // Delete active record
+        async function deleteRecord(id) {
+            if (!confirm(`Are you sure you want to delete this ${activeTab.substring(0, activeTab.length - 1)} record?`)) return;
+            
+            try {
+                showToast('Deleting record...', 'info');
+                const url = `/${activeTab}/delete/${id}/`;
+                await apiFetch(url, {
+                    method: 'DELETE'
+                });
+                showToast('Record deleted successfully!', 'success');
+                loadRecords();
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+    </script>
+</body>
+</html>

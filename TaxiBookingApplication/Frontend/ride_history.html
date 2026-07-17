@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ride History - CabFlow</title>
+    <meta name="description" content="View your CabFlow ride history. Track active trip routes, verify driver assignments, and check invoice transaction records.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <div class="dashboard-header">
+            <div>
+                <h1 style="font-size: 2.25rem;">My Ride History</h1>
+                <p style="color: var(--text-muted);">View details and tracking information for your previous and current trips</p>
+            </div>
+            <a href="booking.html" class="btn btn-primary">Book New Ride</a>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title" style="margin-bottom: 1.5rem;">Trips and Bookings</h2>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Route (From ➜ To)</th>
+                            <th>Driver</th>
+                            <th>Fare</th>
+                            <th>Ride Status</th>
+                            <th>Payment Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted);">Loading your ride history...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Secure access to customers only
+        if (!enforceRole(['customer'])) {
+            throw new Error("Access Denied");
+        }
+
+        const customer = Session.getUser();
+
+        // Load historical booking data
+        async function loadHistory() {
+            const tableBody = document.getElementById('history-table-body');
+            try {
+                // Fetch bookings and payments parallelly
+                const [bookings, payments] = await Promise.all([
+                    apiFetch('/bookings/'),
+                    apiFetch('/payments/')
+                ]);
+                
+                // Filter bookings by logged in customer name
+                const myBookings = bookings.filter(b => b.customer_name === customer.full_name);
+                
+                if (myBookings.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                You haven't booked any rides yet.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // Sort bookings by date / ID descending
+                myBookings.sort((a, b) => b.booking_id - a.booking_id);
+                
+                tableBody.innerHTML = '';
+                
+                myBookings.forEach(booking => {
+                    // Match corresponding payment
+                    const payment = payments.find(p => p.booking_id === booking.booking_id);
+                    const isPaid = payment && payment.payment_status === 'Success';
+                    
+                    // Style badges
+                    let rideBadge = 'badge-info';
+                    if (booking.ride_status === 'Completed') rideBadge = 'badge-success';
+                    if (booking.ride_status === 'Cancelled') rideBadge = 'badge-danger';
+                    if (booking.ride_status === 'In Progress') rideBadge = 'badge-primary';
+                    if (booking.ride_status === 'Accepted') rideBadge = 'badge-success';
+
+                    let paymentBadge = 'badge-pending';
+                    if (isPaid) paymentBadge = 'badge-success';
+                    else if (payment && payment.payment_status === 'Failed') paymentBadge = 'badge-danger';
+                    
+                    // Actions column depending on statuses
+                    let actionsHTML = '';
+                    
+                    if (booking.ride_status === 'Requested' && !isPaid) {
+                        actionsHTML = `
+                            <a href="payments.html?booking_id=${booking.booking_id}" class="btn btn-primary btn-sm" style="margin-right: 0.5rem;">Pay Now</a>
+                            <button onclick="cancelRide(${booking.booking_id})" class="btn btn-danger btn-sm">Cancel</button>
+                        `;
+                    } else if (booking.ride_status === 'Accepted' && !isPaid) {
+                        actionsHTML = `
+                            <a href="payments.html?booking_id=${booking.booking_id}" class="btn btn-primary btn-sm">Pay Now</a>
+                        `;
+                    } else {
+                        actionsHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">No Actions</span>`;
+                    }
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>#${booking.booking_id}</strong></td>
+                        <td>${booking.booking_date}</td>
+                        <td>
+                            <div style="font-weight: 500;">${booking.pickup_location}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">to ${booking.drop_location}</div>
+                        </td>
+                        <td>${booking.driver_name || 'Unassigned'}</td>
+                        <td style="font-weight: 600; color: var(--primary);">₹${booking.fare.toFixed(2)}</td>
+                        <td><span class="badge ${rideBadge}">${booking.ride_status}</span></td>
+                        <td><span class="badge ${paymentBadge}">${isPaid ? 'Paid' : 'Unpaid'}</span></td>
+                        <td>${actionsHTML}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+            } catch (err) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--danger); padding: 2rem;">
+                            Error loading history: ${err.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Cancel a booking (change status to Cancelled)
+        async function cancelRide(id) {
+            if (!confirm('Are you sure you want to cancel this ride request?')) return;
+            
+            try {
+                const response = await apiFetch(`/bookings/update/${id}/`, {
+                    method: 'PUT',
+                    body: {
+                        ride_status: 'Cancelled'
+                    }
+                });
+                
+                // If a driver was assigned, make sure they are available again
+                if (response.driver_name) {
+                    const drivers = await apiFetch('/drivers/');
+                    const driverObj = drivers.find(d => d.driver_name === response.driver_name);
+                    if (driverObj) {
+                        await apiFetch(`/drivers/update/${driverObj.driver_id}/`, {
+                            method: 'PUT',
+                            body: { availability: 'Available' }
+                        });
+                    }
+                }
+                
+                showToast('Ride cancelled successfully.', 'info');
+                loadHistory();
+            } catch (err) {
+                showToast(err.message, 'danger');
+            }
+        }
+
+        // Load page listings
+        loadHistory();
+    </script>
+</body>
+</html>
