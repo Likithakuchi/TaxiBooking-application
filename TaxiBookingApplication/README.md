@@ -7,22 +7,23 @@ CabFlow is a full-stack, high-fidelity taxi booking and ride-hailing application
 ## 📸 Application Screenshots
 
 ### Landing Page (Home)
-![Landing Page](screenshots/app_landing_page.png)
+<img width="713" height="395" alt="image" src="https://github.com/user-attachments/assets/34090bc3-859e-44d0-a27b-62038b9b23c6" />
+
 
 ### Login Page
-![Login Page](screenshots/app_login_page.png)
+<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/b2304ff4-c718-48a3-b434-de178f2df2ae" />
+
 
 ### Ride Booking Page
-![Booking Page](screenshots/app_booking_page.png)
+<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/29c1baf4-6061-4358-a7e1-39de651e8195" />
+
 
 ### Live GPS Tracking & Driver Details
-![Tracking Page](screenshots/app_tracking_page.png)
+<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/94cbb8bd-7d8e-4988-8d97-6c5ed3aeead3" />
 
-### Secure Payment Page
-![Payment Page](screenshots/app_payment_page.png)
+<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/c2bf7873-152f-43e2-b5d1-1a39b6f75bbe" />
 
-### Admin Dashboard
-![Admin Dashboard](screenshots/app_admin_dashboard.png)
+<img width="893" height="416" alt="image" src="https://github.com/user-attachments/assets/9135573f-fa25-44af-a84f-312d37c9601e" />
 
 ---
 
@@ -175,23 +176,25 @@ TaxiBookingApplication/
 
 ### GET - Fetch All Customers
 **Endpoint**: `GET http://localhost:8000/customers/`
+<img width="890" height="488" alt="Screenshot 2026-07-17 155041" src="https://github.com/user-attachments/assets/d99c21a4-90a7-4dd7-b1e4-eb2dd9af5ebb" />
 
-![Postman GET Customers](screenshots/postman_get_customers.png)
+
 
 ### POST - Create New Booking
 **Endpoint**: `POST http://localhost:8000/bookings/add/`
+<img width="890" height="488" alt="Screenshot 2026-07-17 155041" src="https://github.com/user-attachments/assets/981878cd-2c69-48ce-8693-496bb655eb61" />
 
-![Postman POST Booking](screenshots/postman_post_booking.png)
+
 
 ### PUT - Update Driver Availability
 **Endpoint**: `PUT http://localhost:8000/drivers/update/201/`
+<img width="890" height="488" alt="Screenshot 2026-07-17 155041" src="https://github.com/user-attachments/assets/669c3de0-c29c-44d9-91b4-f059472efa54" />
 
-![Postman PUT Driver](screenshots/postman_put_driver.png)
 
 ### DELETE - Remove Payment Record
 **Endpoint**: `DELETE http://localhost:8000/payments/delete/401/`
+<img width="890" height="488" alt="Screenshot 2026-07-17 155041" src="https://github.com/user-attachments/assets/753aa94c-52f5-49cd-95de-2d712de6e97c" />
 
-![Postman DELETE Payment](screenshots/postman_delete_payment.png)
 
 ---
 
