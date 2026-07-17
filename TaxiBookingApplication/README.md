@@ -1,4 +1,4 @@
-<img width="683" height="408" alt="Screenshot 2026-07-17 154043" src="https://github.com/user-attachments/assets/48b0e3d1-0d0a-4a6a-8729-c4b72ab56fea" /># CabFlow - Premium Taxi Booking Application
+# CabFlow - Premium Taxi Booking Application
 
 CabFlow is a full-stack, high-fidelity taxi booking and ride-hailing application. It connects customers with professional drivers, enables vehicle tracking, processes mock digital payments, and features comprehensive administrative dashboards.
 
